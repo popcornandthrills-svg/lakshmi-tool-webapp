@@ -992,11 +992,11 @@ export default function ProductDetailsPage() {
       ...prev,
       artNo: product.art_number ?? prev.artNo,
       partyName: product.party_name ?? product.customer ?? prev.partyName,
-      grossWeight: prev.grossWeight || formatValue(grossWeight, 2),
-      stonesCount: prev.stonesCount || formatValue(toNumber(product.stones_count, 0), 2),
-      stoneSettingCost: prev.stoneSettingCost || formatValue(toNumber(product.stones_setting_cost, 0), 2),
-      polishCost: prev.polishCost || formatValue(toNumber(product.polish_cost, 0), 2),
-      totalCost: prev.totalCost || formatValue(toNumber(product.total_estimation_cost, 0), 2),
+      grossWeight: isMeaningfulNumber(prev.grossWeight) ? prev.grossWeight : formatValue(grossWeight, 2),
+      stonesCount: isMeaningfulNumber(prev.stonesCount) ? prev.stonesCount : formatValue(toNumber(product.stones_count, 0), 2),
+      stoneSettingCost: isMeaningfulNumber(prev.stoneSettingCost) ? prev.stoneSettingCost : formatValue(toNumber(product.stones_setting_cost, 0), 2),
+      polishCost: isMeaningfulNumber(prev.polishCost) ? prev.polishCost : formatValue(toNumber(product.polish_cost, 0), 2),
+      totalCost: isMeaningfulNumber(prev.totalCost) ? prev.totalCost : formatValue(toNumber(product.total_estimation_cost, 0), 2),
       productDetailRows: normalizeProductDetailRows(
         prev.productDetailRows,
         buildProductDetailRows([
