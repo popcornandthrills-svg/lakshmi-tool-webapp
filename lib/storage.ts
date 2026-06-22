@@ -19,6 +19,7 @@ const ROOT_DIR = process.cwd();
 const DATA_DIR = process.env.LAKSHMI_DATA_DIR || path.join(ROOT_DIR, ".data");
 const DB_PATH = path.join(DATA_DIR, "lakshmi.sqlite");
 const BASE_PRODUCTS_PATH = process.env.LAKSHMI_BASE_PRODUCTS_PATH || path.join(ROOT_DIR, "data", "products.json");
+const BASE_ORDER_STATE_PATH = process.env.LAKSHMI_BASE_ORDER_STATE_PATH || path.join(ROOT_DIR, "data", "order-state.json");
 
 let db: DatabaseSync | null = null;
 
@@ -72,6 +73,15 @@ function readBaseProducts(): PersistedProduct[] {
   if (!existsSync(BASE_PRODUCTS_PATH)) return [];
   try {
     return JSON.parse(readFileSync(BASE_PRODUCTS_PATH, "utf8")) as PersistedProduct[];
+  } catch {
+    return [];
+  }
+}
+
+function readBaseOrderStates(): Array<{ art_number?: string; payload_json?: string }> {
+  if (!existsSync(BASE_ORDER_STATE_PATH)) return [];
+  try {
+    return JSON.parse(readFileSync(BASE_ORDER_STATE_PATH, "utf8")) as Array<{ art_number?: string; payload_json?: string }>;
   } catch {
     return [];
   }
@@ -142,12 +152,15 @@ export function loadOrderEstimate(art: string): PersistedOrderPayload | null {
   if (!key) return null;
   const dbInstance = getDb();
   const row = dbInstance.prepare("SELECT payload_json FROM order_estimates WHERE lower(art_number) = ?").get(key) as { payload_json: string } | undefined;
-  if (!row) return null;
-  try {
-    return JSON.parse(row.payload_json) as PersistedOrderPayload;
-  } catch {
-    return null;
+  const candidates = [row?.payload_json, readBaseOrderStates().find((item) => normalizeKey(item.art_number) === key)?.payload_json].filter(Boolean) as string[];
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate) as PersistedOrderPayload;
+    } catch {
+      continue;
+    }
   }
+  return null;
 }
 
 export function saveOrderEstimate(art: string, payload: PersistedOrderPayload) {
