@@ -65,6 +65,14 @@ function getDb() {
   return db;
 }
 
+function safeDb() {
+  try {
+    return getDb();
+  } catch {
+    return null;
+  }
+}
+
 function normalizeKey(value: unknown) {
   return String(value ?? "").trim().toLowerCase();
 }
@@ -89,12 +97,14 @@ function readBaseOrderStates(): Array<{ art_number?: string; payload_json?: stri
 
 export function loadProducts(): PersistedProduct[] {
   const base = readBaseProducts();
-  const dbInstance = getDb();
-  const customRows = dbInstance.prepare("SELECT product_json, created_at, updated_at FROM products ORDER BY updated_at DESC").all() as Array<{
-    product_json: string;
-    created_at?: string;
-    updated_at?: string;
-  }>;
+  const dbInstance = safeDb();
+  const customRows = dbInstance
+    ? (dbInstance.prepare("SELECT product_json, created_at, updated_at FROM products ORDER BY updated_at DESC").all() as Array<{
+        product_json: string;
+        created_at?: string;
+        updated_at?: string;
+      }>)
+    : [];
   const custom = customRows.flatMap((row) => {
     try {
       return [{ ...(JSON.parse(row.product_json) as PersistedProduct), created_at: row.created_at, updated_at: row.updated_at }];
@@ -117,7 +127,8 @@ export function loadProducts(): PersistedProduct[] {
 export function upsertProduct(product: PersistedProduct) {
   const key = String(product.art_number ?? product.design_no ?? "").trim();
   if (!key) throw new Error("art_number is required");
-  const dbInstance = getDb();
+  const dbInstance = safeDb();
+  if (!dbInstance) return;
   const existing = dbInstance.prepare("SELECT created_at FROM products WHERE art_number = ?").get(key) as { created_at?: string } | undefined;
   const createdAt = String(product.created_at ?? existing?.created_at ?? new Date().toISOString());
   const updatedAt = new Date().toISOString();
@@ -136,7 +147,8 @@ export function upsertProduct(product: PersistedProduct) {
 export function deleteProduct(productKey: string) {
   const key = normalizeKey(productKey);
   if (!key) return;
-  const dbInstance = getDb();
+  const dbInstance = safeDb();
+  if (!dbInstance) return;
   const rows = dbInstance.prepare("SELECT art_number FROM products WHERE lower(art_number) = ?").all(key) as Array<{ art_number: string }>;
   const artNumbers = rows.map((row) => row.art_number);
   if (!artNumbers.length) return;
@@ -150,8 +162,10 @@ export function deleteProduct(productKey: string) {
 export function loadOrderEstimate(art: string): PersistedOrderPayload | null {
   const key = normalizeKey(art);
   if (!key) return null;
-  const dbInstance = getDb();
-  const row = dbInstance.prepare("SELECT payload_json FROM order_estimates WHERE lower(art_number) = ?").get(key) as { payload_json: string } | undefined;
+  const dbInstance = safeDb();
+  const row = dbInstance
+    ? (dbInstance.prepare("SELECT payload_json FROM order_estimates WHERE lower(art_number) = ?").get(key) as { payload_json: string } | undefined)
+    : undefined;
   const candidates = [row?.payload_json, readBaseOrderStates().find((item) => normalizeKey(item.art_number) === key)?.payload_json].filter(Boolean) as string[];
   for (const candidate of candidates) {
     try {
@@ -166,7 +180,8 @@ export function loadOrderEstimate(art: string): PersistedOrderPayload | null {
 export function saveOrderEstimate(art: string, payload: PersistedOrderPayload) {
   const key = String(art ?? "").trim();
   if (!key) throw new Error("art is required");
-  const dbInstance = getDb();
+  const dbInstance = safeDb();
+  if (!dbInstance) return;
   dbInstance
     .prepare(
       `INSERT INTO order_estimates (art_number, payload_json, updated_at)
@@ -181,17 +196,20 @@ export function saveOrderEstimate(art: string, payload: PersistedOrderPayload) {
 export function loadProductImagePath(art: string, kind: "cad" | "sample") {
   const key = normalizeKey(art);
   if (!key) return "";
-  const dbInstance = getDb();
+  const dbInstance = safeDb();
   const row = dbInstance
-    .prepare("SELECT file_path FROM product_images WHERE lower(art_number) = ? AND kind = ?")
-    .get(key, kind) as { file_path: string } | undefined;
+    ? (dbInstance
+        .prepare("SELECT file_path FROM product_images WHERE lower(art_number) = ? AND kind = ?")
+        .get(key, kind) as { file_path: string } | undefined)
+    : undefined;
   return row?.file_path ?? "";
 }
 
 export function saveProductImagePath(art: string, kind: "cad" | "sample", filePath: string) {
   const key = String(art ?? "").trim();
   if (!key) throw new Error("art is required");
-  const dbInstance = getDb();
+  const dbInstance = safeDb();
+  if (!dbInstance) return;
   dbInstance
     .prepare(
       `INSERT INTO product_images (art_number, kind, file_path, updated_at)
@@ -206,6 +224,7 @@ export function saveProductImagePath(art: string, kind: "cad" | "sample", filePa
 export function deleteProductImagePath(art: string, kind: "cad" | "sample") {
   const key = normalizeKey(art);
   if (!key) return;
-  const dbInstance = getDb();
+  const dbInstance = safeDb();
+  if (!dbInstance) return;
   dbInstance.prepare("DELETE FROM product_images WHERE lower(art_number) = ? AND kind = ?").run(key, kind);
 }
