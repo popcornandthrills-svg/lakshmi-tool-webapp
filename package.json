@@ -1,0 +1,29 @@
+{
+  "name": "lakshmi-tool-web",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "start:prod": "next start -p 3000",
+    "desktop": "electron .",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "next": "^15.3.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "electron": "^34.0.0",
+    "typescript": "^5.8.3"
+  }
+}

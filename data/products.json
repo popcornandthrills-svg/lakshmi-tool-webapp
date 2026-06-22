@@ -1,0 +1,68 @@
+[
+  {
+    "art_number": "LHR-115788",
+    "product_name": "Pearl Leaf Necklace",
+    "party_name": "Rup Kumar De",
+    "status": "Final Sample Approved",
+    "category": "Necklace",
+    "cad_image": "/assets/cad/lhr-115788-cad.svg",
+    "final_sample_image": "/assets/sample/lhr-115788-sample.svg",
+    "created_at": "2026-06-05T09:13:00.000Z",
+    "updated_at": "2026-06-05T18:20:00.000Z"
+  },
+  {
+    "art_number": "LHR-100245",
+    "product_name": "Emerald Drop Necklace",
+    "party_name": "Retail Sample",
+    "status": "CAD Ready",
+    "category": "Haram",
+    "cad_image": "/assets/cad/lhr-100245-cad.svg",
+    "final_sample_image": "/assets/sample/lhr-100245-sample.svg",
+    "created_at": "2026-06-03T17:38:00.000Z",
+    "updated_at": "2026-06-05T14:07:00.000Z"
+  },
+  {
+    "art_number": "LHR-220011",
+    "product_name": "Temple Chain Necklace",
+    "party_name": "Internal Catalog",
+    "status": "In Production",
+    "category": "Necklace",
+    "cad_image": "/assets/cad/lhr-220011-cad.svg",
+    "final_sample_image": "/assets/sample/lhr-220011-sample.svg",
+    "created_at": "2026-06-03T17:50:00.000Z",
+    "updated_at": "2026-06-05T18:14:00.000Z"
+  },
+  {
+    "art_number": "LHR-330084",
+    "product_name": "Pearl Choker",
+    "party_name": "Boutique Order",
+    "status": "Sample Received",
+    "category": "Choker",
+    "cad_image": "/assets/cad/lhr-330084-cad.svg",
+    "final_sample_image": "/assets/sample/lhr-330084-sample.svg",
+    "created_at": "2026-06-05T14:09:00.000Z",
+    "updated_at": "2026-06-05T14:09:00.000Z"
+  },
+  {
+    "art_number": "LHR-440512",
+    "product_name": "Ruby Bridal Necklace",
+    "party_name": "Wedding Collection",
+    "status": "Quotation Sent",
+    "category": "Bridal Necklace",
+    "cad_image": "/assets/cad/lhr-440512-cad.svg",
+    "final_sample_image": "/assets/sample/lhr-440512-sample.svg",
+    "created_at": "2026-06-05T16:19:00.000Z",
+    "updated_at": "2026-06-05T16:19:00.000Z"
+  },
+  {
+    "art_number": "LHR-403569",
+    "product_name": "RANI JADAU HARAM",
+    "party_name": "Jaganatha Reddy",
+    "status": "Approved",
+    "category": "HARAM",
+    "cad_image": "/uploads/cad/lhr-_403569-cad.jpg",
+    "final_sample_image": "/uploads/sample/lhr-_403569-sample.jpg",
+    "created_at": "2026-06-03T09:00:00.000Z",
+    "updated_at": "2026-06-05T14:10:00.000Z"
+  }
+]

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="700" viewBox="0 0 900 700">
+  <rect width="100%" height="100%" fill="#050505"/>
+  <text x="450" y="110" fill="#ffffff" font-size="78" font-family="Arial, Helvetica, sans-serif" text-anchor="middle">CAD</text>
+  <text x="450" y="350" fill="#d7b45a" font-size="28" font-family="Arial, Helvetica, sans-serif" text-anchor="middle">LHR-115788</text>
+  <path d="M200 120 C150 250, 150 430, 250 580" fill="none" stroke="#c48a2c" stroke-width="12"/>
+  <path d="M700 120 C750 250, 750 430, 650 580" fill="none" stroke="#c48a2c" stroke-width="12"/>
+  <circle cx="450" cy="560" r="95" fill="#7d4b10" stroke="#f2d08b" stroke-width="8"/>
+</svg>
