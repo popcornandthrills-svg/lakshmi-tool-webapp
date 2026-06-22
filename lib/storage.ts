@@ -16,6 +16,7 @@ export type PersistedOrderPayload = {
 };
 
 const ROOT_DIR = process.cwd();
+const IS_VERCEL = Boolean(process.env.VERCEL);
 const DATA_DIR = process.env.LAKSHMI_DATA_DIR || path.join(ROOT_DIR, ".data");
 const DB_PATH = path.join(DATA_DIR, "lakshmi.sqlite");
 const BASE_PRODUCTS_PATH = process.env.LAKSHMI_BASE_PRODUCTS_PATH || path.join(ROOT_DIR, "data", "products.json");
@@ -97,6 +98,7 @@ function readBaseOrderStates(): Array<{ art_number?: string; payload_json?: stri
 
 export function loadProducts(): PersistedProduct[] {
   const base = readBaseProducts();
+  if (IS_VERCEL) return base;
   const dbInstance = safeDb();
   const customRows = dbInstance
     ? (dbInstance.prepare("SELECT product_json, created_at, updated_at FROM products ORDER BY updated_at DESC").all() as Array<{
@@ -162,11 +164,20 @@ export function deleteProduct(productKey: string) {
 export function loadOrderEstimate(art: string): PersistedOrderPayload | null {
   const key = normalizeKey(art);
   if (!key) return null;
+  const seeded = readBaseOrderStates().find((item) => normalizeKey(item.art_number) === key)?.payload_json;
+  if (IS_VERCEL) {
+    if (!seeded) return null;
+    try {
+      return JSON.parse(seeded) as PersistedOrderPayload;
+    } catch {
+      return null;
+    }
+  }
   const dbInstance = safeDb();
   const row = dbInstance
     ? (dbInstance.prepare("SELECT payload_json FROM order_estimates WHERE lower(art_number) = ?").get(key) as { payload_json: string } | undefined)
     : undefined;
-  const candidates = [row?.payload_json, readBaseOrderStates().find((item) => normalizeKey(item.art_number) === key)?.payload_json].filter(Boolean) as string[];
+  const candidates = [row?.payload_json, seeded].filter(Boolean) as string[];
   for (const candidate of candidates) {
     try {
       return JSON.parse(candidate) as PersistedOrderPayload;
