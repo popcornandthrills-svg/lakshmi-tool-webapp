@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import productsData from "../../../data/products.json";
+import orderStateData from "../../../data/order-state.json";
 
 type Product = {
   art_number: string;
@@ -424,6 +425,32 @@ function mergeDetailEditWithDefaults(
     productDetailRows,
     deletedProductDetailLabels: saved?.deletedProductDetailLabels ?? defaults.deletedProductDetailLabels,
   };
+}
+
+function getSeedOrderState(artNumber: string) {
+  const key = artNumber.trim().toLowerCase();
+  const item = (orderStateData as Array<{ art_number?: string; payload_json?: string }>).find(
+    (entry) => String(entry.art_number ?? "").trim().toLowerCase() === key
+  );
+  if (!item?.payload_json) return null;
+  try {
+    return JSON.parse(item.payload_json) as {
+      state?: Partial<OrderEstimateState>;
+      detailEdit?: Partial<ProductDetailEdit>;
+    };
+  } catch {
+    return null;
+  }
+}
+
+function isSuspiciousDetailEdit(detailEdit?: Partial<ProductDetailEdit> | null) {
+  if (!detailEdit) return true;
+  return (
+    !isMeaningfulNumber(detailEdit.stonesCount) ||
+    !isMeaningfulNumber(detailEdit.stoneSettingCost) ||
+    !isMeaningfulNumber(detailEdit.totalCost) ||
+    toNumber(detailEdit.totalCost, 0) < 1000
+  );
 }
 
 function readProductDetailValue(rows: ProductDetailRow[], label: string, fallback = "") {
@@ -879,6 +906,7 @@ export default function ProductDetailsPage() {
         };
         if (!mounted) return;
         const loadedDefaults = buildDefaultDetailEdit();
+        const seedOrderState = getSeedOrderState(currentArt);
         if (data.state) {
             const loadedState: OrderEstimateState = {
               ...data.state,
@@ -902,10 +930,28 @@ export default function ProductDetailsPage() {
               cad: normalizeAssetPath(loadedState.images?.cad ?? ""),
               sample: normalizeAssetPath(loadedState.images?.sample ?? ""),
             });
-            setDetailEdit((prev) => mergeDetailEditWithDefaults(data.detailEdit ?? prev, loadedDefaults, loadedState.details));
+            const detailSource =
+              !isSuspiciousDetailEdit(data.detailEdit) ? data.detailEdit : seedOrderState?.detailEdit ?? data.detailEdit ?? null;
+            setDetailEdit((prev) => mergeDetailEditWithDefaults(detailSource ?? prev, loadedDefaults, loadedState.details));
+            if (seedOrderState?.state?.rows?.length) {
+              const seededState = seedOrderState.state;
+              setState((prev) => ({
+                ...prev,
+                details: {
+                  ...prev.details,
+                  ...(seededState?.details ?? {}),
+                },
+                rows: (seededState?.rows as WorksheetRow[]) ?? prev.rows,
+                footerRows: Array.isArray(seededState?.footerRows) ? (seededState.footerRows as FooterFormulaRow[]) : prev.footerRows ?? [],
+                images: {
+                  cad: normalizeAssetPath(seededState?.images?.cad ?? loadedState.images?.cad ?? prev.images.cad),
+                  sample: normalizeAssetPath(seededState?.images?.sample ?? loadedState.images?.sample ?? prev.images.sample),
+                },
+              }));
+            }
             lastSavedSnapshotRef.current = JSON.stringify({
               state: loadedState,
-              detailEdit: data.detailEdit ?? null,
+              detailEdit: detailSource ?? null,
             });
             hydratedFromStorageRef.current = true;
             setStorageStatus("Loaded from storage");
