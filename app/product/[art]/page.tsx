@@ -369,6 +369,63 @@ function buildProductDetailRows(values: Array<[string, string]>) {
   }));
 }
 
+function isMeaningfulNumber(value: unknown) {
+  const parsed = Number(String(value ?? "").replace(/,/g, "").trim());
+  return Number.isFinite(parsed) && parsed > 0;
+}
+
+function pickNumberValue(preferred: unknown, fallback: unknown) {
+  return isMeaningfulNumber(preferred) ? toNumber(preferred, 0) : toNumber(fallback, 0);
+}
+
+function pickTextValue(preferred: unknown, fallback: string) {
+  const text = String(preferred ?? "").trim();
+  return text ? text : fallback;
+}
+
+function mergeDetailEditWithDefaults(
+  saved: Partial<ProductDetailEdit> | null | undefined,
+  defaults: ProductDetailEdit,
+  loadedState?: Partial<OrderEstimateState["details"]> | null
+): ProductDetailEdit {
+  const grossWeight = pickNumberValue(saved?.grossWeight, defaults.grossWeight);
+  const stonesCount = pickNumberValue(saved?.stonesCount, defaults.stonesCount);
+  const stoneSettingCost = pickNumberValue(saved?.stoneSettingCost, defaults.stoneSettingCost);
+  const polishCost = pickNumberValue(saved?.polishCost, defaults.polishCost);
+  const totalCost = pickNumberValue(saved?.totalCost, defaults.totalCost);
+  const partyName = pickTextValue(saved?.partyName, defaults.partyName);
+  const artNo = pickTextValue(saved?.artNo, defaults.artNo);
+  const productDetailRows = normalizeProductDetailRows(
+    saved?.productDetailRows ?? defaults.productDetailRows,
+    buildProductDetailRows([
+      ["Art No", artNo],
+      ["Party Name", partyName],
+      ["Total Gross Weight", formatValue(loadedState?.grossWeight ?? grossWeight, 2)],
+      ["Ghat Rate", formatValue(loadedState?.makingChargeRate ?? 0, 2)],
+      ["1pc Stone Setting Cost", formatValue(stoneSettingCost, 2)],
+      ["Total Stones Count", formatValue(stonesCount, 2)],
+      ["Total Kg of Charge", formatValue(stoneSettingCost, 2)],
+      ["Polish Cost", formatValue(loadedState?.polishRate ?? polishCost, 2)],
+      ["Grand total", formatValue(totalCost, 2)],
+    ]),
+    saved?.deletedProductDetailLabels ?? defaults.deletedProductDetailLabels
+  );
+
+  return {
+    ...defaults,
+    ...saved,
+    artNo,
+    partyName,
+    grossWeight: formatValue(grossWeight, 2),
+    stonesCount: formatValue(stonesCount, 2),
+    stoneSettingCost: formatValue(stoneSettingCost, 2),
+    polishCost: formatValue(polishCost, 2),
+    totalCost: formatValue(totalCost, 2),
+    productDetailRows,
+    deletedProductDetailLabels: saved?.deletedProductDetailLabels ?? defaults.deletedProductDetailLabels,
+  };
+}
+
 function readProductDetailValue(rows: ProductDetailRow[], label: string, fallback = "") {
   const normalizedLabel = label.trim().toLowerCase();
   const row = rows.find((item) => item.label.trim().toLowerCase() === normalizedLabel);
@@ -845,33 +902,7 @@ export default function ProductDetailsPage() {
               cad: normalizeAssetPath(loadedState.images?.cad ?? ""),
               sample: normalizeAssetPath(loadedState.images?.sample ?? ""),
             });
-            if (data.detailEdit) {
-              setDetailEdit((prev) => {
-                const baseRows = buildProductDetailRows([
-                  ["Art No", loadedDefaults.artNo],
-                  ["Party Name", loadedDefaults.partyName],
-                  ["Total Gross Weight", formatValue(loadedState.details?.grossWeight ?? toNumber(loadedDefaults.grossWeight, 0), 2)],
-                  ["Ghat Rate", formatValue(loadedState.details?.makingChargeRate ?? 0, 2)],
-                  ["1pc Stone Setting Cost", formatValue(toNumber(data.detailEdit?.stoneSettingCost ?? loadedDefaults.stoneSettingCost, 0), 2)],
-                  ["Total Stones Count", formatValue(toNumber(data.detailEdit?.stonesCount ?? loadedDefaults.stonesCount, 0), 2)],
-                  ["Total Kg of Charge", formatValue(toNumber(data.detailEdit?.stoneSettingCost ?? loadedDefaults.stoneSettingCost, 0), 2)],
-                  ["Polish Cost", formatValue(loadedState.details?.polishRate ?? toNumber(loadedDefaults.polishCost, 0), 2)],
-                  ["Grand total", formatValue(toNumber(data.detailEdit?.totalCost ?? loadedDefaults.totalCost, 0), 2)],
-                ]);
-                const next = {
-                  ...loadedDefaults,
-                  ...prev,
-                  ...data.detailEdit,
-                  deletedProductDetailLabels: data.detailEdit?.deletedProductDetailLabels ?? prev.deletedProductDetailLabels ?? loadedDefaults.deletedProductDetailLabels,
-                  productDetailRows: normalizeProductDetailRows(
-                    data.detailEdit?.productDetailRows ?? prev.productDetailRows,
-                    baseRows,
-                    data.detailEdit?.deletedProductDetailLabels ?? prev.deletedProductDetailLabels ?? loadedDefaults.deletedProductDetailLabels
-                  ),
-                };
-                return next;
-              });
-            }
+            setDetailEdit((prev) => mergeDetailEditWithDefaults(data.detailEdit ?? prev, loadedDefaults, loadedState.details));
             lastSavedSnapshotRef.current = JSON.stringify({
               state: loadedState,
               detailEdit: data.detailEdit ?? null,
