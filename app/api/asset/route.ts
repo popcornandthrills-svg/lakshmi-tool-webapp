@@ -2,8 +2,8 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-const ROOT_DIR = path.resolve(process.cwd(), "..");
-const ASSET_DIR = path.join(ROOT_DIR, "assets");
+const ROOT_DIR = process.cwd();
+const PUBLIC_DIR = path.join(ROOT_DIR, "public");
 
 const contentTypes: Record<string, string> = {
   ".svg": "image/svg+xml",
@@ -22,8 +22,8 @@ export async function GET(request: Request) {
     }
 
     const normalizedPath = assetPath.replaceAll("\\", "/");
-    const fullPath = path.resolve(ROOT_DIR, normalizedPath);
-    if (!fullPath.startsWith(ASSET_DIR)) {
+    const fullPath = path.resolve(PUBLIC_DIR, `.${normalizedPath}`);
+    if (!fullPath.startsWith(PUBLIC_DIR)) {
       return new Response("Forbidden", { status: 403 });
     }
 

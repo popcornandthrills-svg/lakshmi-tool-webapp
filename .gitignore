@@ -6,4 +6,3 @@ backup/
 *.tsbuildinfo
 _ngrok/
 cloudflared.exe
-public/uploads/
