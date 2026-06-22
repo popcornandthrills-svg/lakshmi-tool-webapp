@@ -916,9 +916,7 @@ export default function ProductDetailsPage() {
             } as OrderEstimateState)
           : null;
         const preferredState = seedState ?? liveState;
-        const preferredDetail = !isSuspiciousDetailEdit(data.detailEdit)
-          ? data.detailEdit
-          : seedOrderState?.detailEdit ?? data.detailEdit ?? null;
+        const preferredDetail = seedOrderState?.detailEdit ?? (!isSuspiciousDetailEdit(data.detailEdit) ? data.detailEdit : null) ?? null;
         if (preferredState) {
             setState((prev) => ({
               ...prev,
@@ -938,8 +936,28 @@ export default function ProductDetailsPage() {
               sample: normalizeAssetPath(preferredState.images?.sample ?? ""),
             });
             setDetailEdit((prev) => mergeDetailEditWithDefaults(preferredDetail ?? prev, loadedDefaults, preferredState.details));
+            if (seedState) {
+              setState((prev) => ({
+                ...prev,
+                ...seedState,
+                details: {
+                  ...prev.details,
+                  ...(seedState.details ?? {}),
+                },
+                rows: Array.isArray(seedState.rows) ? seedState.rows : prev.rows,
+                footerRows: Array.isArray(seedState.footerRows) ? seedState.footerRows : prev.footerRows ?? [],
+                images: {
+                  cad: normalizeAssetPath(seedState.images?.cad ?? prev.images.cad),
+                  sample: normalizeAssetPath(seedState.images?.sample ?? prev.images.sample),
+                },
+              }));
+              setImageDraft({
+                cad: normalizeAssetPath(seedState.images?.cad ?? ""),
+                sample: normalizeAssetPath(seedState.images?.sample ?? ""),
+              });
+            }
             lastSavedSnapshotRef.current = JSON.stringify({
-              state: preferredState,
+              state: seedState ?? preferredState,
               detailEdit: preferredDetail ?? null,
             });
             hydratedFromStorageRef.current = true;
