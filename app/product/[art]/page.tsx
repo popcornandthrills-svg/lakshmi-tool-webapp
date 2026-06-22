@@ -907,51 +907,40 @@ export default function ProductDetailsPage() {
         if (!mounted) return;
         const loadedDefaults = buildDefaultDetailEdit();
         const seedOrderState = getSeedOrderState(currentArt);
-        if (data.state) {
-            const loadedState: OrderEstimateState = {
-              ...data.state,
+        const liveState = data.state ? { ...data.state, locked: true, showDetails: false } : null;
+        const seedState = seedOrderState?.state
+          ? ({
+              ...seedOrderState.state,
               locked: true,
               showDetails: false,
-            };
+            } as OrderEstimateState)
+          : null;
+        const preferredState = seedState ?? liveState;
+        const preferredDetail = !isSuspiciousDetailEdit(data.detailEdit)
+          ? data.detailEdit
+          : seedOrderState?.detailEdit ?? data.detailEdit ?? null;
+        if (preferredState) {
             setState((prev) => ({
               ...prev,
-              ...loadedState,
+              ...preferredState,
               details: {
                 ...prev.details,
-                ...(loadedState.details ?? {}),
+                ...(preferredState.details ?? {}),
               },
-              footerRows: Array.isArray(loadedState.footerRows) ? loadedState.footerRows : prev.footerRows ?? [],
+              footerRows: Array.isArray(preferredState.footerRows) ? preferredState.footerRows : prev.footerRows ?? [],
               images: {
-                cad: normalizeAssetPath(loadedState.images?.cad ?? prev.images.cad),
-                sample: normalizeAssetPath(loadedState.images?.sample ?? prev.images.sample),
+                cad: normalizeAssetPath(preferredState.images?.cad ?? prev.images.cad),
+                sample: normalizeAssetPath(preferredState.images?.sample ?? prev.images.sample),
               },
           }));
             setImageDraft({
-              cad: normalizeAssetPath(loadedState.images?.cad ?? ""),
-              sample: normalizeAssetPath(loadedState.images?.sample ?? ""),
+              cad: normalizeAssetPath(preferredState.images?.cad ?? ""),
+              sample: normalizeAssetPath(preferredState.images?.sample ?? ""),
             });
-            const detailSource =
-              !isSuspiciousDetailEdit(data.detailEdit) ? data.detailEdit : seedOrderState?.detailEdit ?? data.detailEdit ?? null;
-            setDetailEdit((prev) => mergeDetailEditWithDefaults(detailSource ?? prev, loadedDefaults, loadedState.details));
-            if (seedOrderState?.state?.rows?.length) {
-              const seededState = seedOrderState.state;
-              setState((prev) => ({
-                ...prev,
-                details: {
-                  ...prev.details,
-                  ...(seededState?.details ?? {}),
-                },
-                rows: (seededState?.rows as WorksheetRow[]) ?? prev.rows,
-                footerRows: Array.isArray(seededState?.footerRows) ? (seededState.footerRows as FooterFormulaRow[]) : prev.footerRows ?? [],
-                images: {
-                  cad: normalizeAssetPath(seededState?.images?.cad ?? loadedState.images?.cad ?? prev.images.cad),
-                  sample: normalizeAssetPath(seededState?.images?.sample ?? loadedState.images?.sample ?? prev.images.sample),
-                },
-              }));
-            }
+            setDetailEdit((prev) => mergeDetailEditWithDefaults(preferredDetail ?? prev, loadedDefaults, preferredState.details));
             lastSavedSnapshotRef.current = JSON.stringify({
-              state: loadedState,
-              detailEdit: detailSource ?? null,
+              state: preferredState,
+              detailEdit: preferredDetail ?? null,
             });
             hydratedFromStorageRef.current = true;
             setStorageStatus("Loaded from storage");
